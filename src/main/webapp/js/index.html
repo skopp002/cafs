@@ -23,96 +23,98 @@
                     templateUrl: 'views/about.html'
                 });
 
-        //Controller Part
-        app.controller("SearchController", function($scope, $http) {
+            //Controller Part
+            app.controller("SearchController", function ($scope, $http) {
 
 
-            $scope.seacrhterm = "";
-            // $scope.searchForm = {
-            //     searchTerm : -1,
-            // };
+                $scope.seacrhterm = "";
+                // $scope.searchForm = {
+                //     searchTerm : -1,
+                // };
 
-            //Now load the data from server
-            _refreshData();
+                //Now load the data from server
+                _refreshData();
 
-            //HTTP POST/PUT methods for add/edit country
-            // with the help of id, we are going to find out whether it is put or post operation
+                //HTTP POST/PUT methods for add/edit country
+                // with the help of id, we are going to find out whether it is put or post operation
 
-            $scope.submitLuceneSearch = function(searchterm) {
+                $scope.submitLuceneSearch = function (searchterm) {
 
-                var method = "";
-                var url = "";
-                // if ($scope.searchForm.searchterm == searchterm) {
+                    var method = "";
+                    var url = "";
+                    // if ($scope.searchForm.searchterm == searchterm) {
                     //Id is absent in form data, it is create new country operation
                     method = "POST";
                     url = 'rest/searchterm';
-                // } else {
+                    // } else {
                     //Id is present in form data, it is edit country operation
                     // method = "PUT";
                     // url = 'rest/searchterm';
-                //}
+                    //}
 
-                $http({
-                    method : method,
-                    url : url,
-                    data : angular.toJson($scope.searchterm),
-                    headers : {
-                        'Content-Type' : 'application/json'
+                    $http({
+                        method: method,
+                        url: url,
+                        data: angular.toJson($scope.searchterm),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(_success, _error);
+                };
+
+                $scope.submitHadoopSearch = function (searchterm) {
+
+                    var method = "";
+                    var url = "";
+                    if ($scope.searchterm == searchterm) {
+                        //Id is absent in form data, it is create new country operation
+                        method = "POST";
+                        url = 'rest/searchterm';
+                    } else {
+                        //Id is present in form data, it is edit country operation
+                        method = "PUT";
+                        url = 'rest/searchterm';
                     }
-                }).then( _success, _error );
-            };
 
-            $scope.submitHadoopSearch = function(searchterm) {
+                    $http({
+                        method: method,
+                        url: url,
+                        data: angular.toJson($scope.searchForm),
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(_success, _error);
+                };
+                /* Private Methods */
 
-                var method = "";
-                var url = "";
-                if ($scope.searchterm == searchterm) {
-                    //Id is absent in form data, it is create new country operation
-                    method = "POST";
-                    url = 'rest/searchterm';
-                } else {
-                    //Id is present in form data, it is edit country operation
-                    method = "PUT";
-                    url = 'rest/searchterm';
+                //HTTP GET- get all countries collection
+                function _refreshData() {
+                    $http({
+                        method: 'GET',
+                        url: 'http://localhost:8080/search'
+                    }).then(function successCallback(response) {
+                        $scope.seacrhterm = response.data;
+                    }, function errorCallback(response) {
+                        console.log(response.statusText);
+                    });
                 }
 
-                $http({
-                    method : method,
-                    url : url,
-                    data : angular.toJson($scope.searchForm),
-                    headers : {
-                        'Content-Type' : 'application/json'
-                    }
-                }).then( _success, _error );
-            };
-            /* Private Methods */
-            //HTTP GET- get all countries collection
-            function _refreshData() {
-                $http({
-                    method : 'GET',
-                    url : 'http://localhost:8080/search'
-                }).then(function successCallback(response) {
-                    $scope.seacrhterm = response.data;
-                }, function errorCallback(response) {
+                function _success(response) {
+                    _refreshData();
+                    _clearFormData()
+                }
+
+                function _error(response) {
                     console.log(response.statusText);
-                });
-            }
+                }
 
-            function _success(response) {
-                _refreshData();
-                _clearFormData()
-            }
+                //Clear the form
+                function _clearFormData() {
+                    $scope.searchform.seacrhterm = -1;
 
-            function _error(response) {
-                console.log(response.statusText);
-            }
-
-            //Clear the form
-            function _clearFormData() {
-                $scope.searchform.seacrhterm = -1;
-
-            };
-        });
+                };
+            });
+        }
     </script>
     <style>
 
