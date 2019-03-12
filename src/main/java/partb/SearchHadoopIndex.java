@@ -11,7 +11,7 @@ import java.io.InputStreamReader;
 public class SearchHadoopIndex {
     public static void main(String args[]){
         try {
-            Path inputDir = new Path("/Users/sunitakoppar/ucr/cs242/singlehashmrindexout/part-00000");
+            Path inputDir = new Path("/Users/sunitakoppar/ucr/cs242/single_jsonmrindexout/part-00000");
             Configuration conf = new Configuration();
             FileSystem fs = inputDir.getFileSystem(conf);
             FSDataInputStream inputStream = fs.open(inputDir);
