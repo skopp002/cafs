@@ -1,9 +1,12 @@
 package partb;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -30,16 +33,33 @@ public class HadoopIndexer {
                         OutputCollector<Text, Text> output, Reporter reporter)
                 throws IOException {
 
-            FileSplit fileSplit = (FileSplit)reporter.getInputSplit();
+            FileSplit fileSplit = (FileSplit) reporter.getInputSplit();
             String fileName = fileSplit.getPath().getName();
             location.set(fileName);
 
             String line = val.toString();
-            StringTokenizer itr = new StringTokenizer(line.toLowerCase());
-            while (itr.hasMoreTokens()) {
-                word.set(itr.nextToken());
-                output.collect(word, location);
+            //  String resultString = line.replaceAll("[^\\p{L}\\p{Nd}]+", " ");
+            String[] itr = line.toLowerCase().split(" ");
+//            JsonElement jsonElement = new JsonParser().parse(line);
+//            String txt = jsonElement.getAsJsonObject().get("text").toString();
+//            System.out.println("Tweet text is"+txt);
+            HashMap<String, String> wordMap = new HashMap<>();
+            for (String token : itr) {
+                wordMap.put(token, fileName);
+                //System.out.println("Writing "+ word + " with "+ location);
             }
+
+            wordMap.forEach((k, v) -> {
+                try {
+
+                    word.set(k);
+                    output.collect(word, location);
+                } catch (IOException e) {
+                    System.out.println("Error while mapping " + e.getCause());
+                }
+            });
+
+
         }
     }
 
@@ -71,9 +91,13 @@ public class HadoopIndexer {
      * "driver" for the MapReduce job.
      */
     public static void main(String[] args) {
+        if( args.length !=2 ){
+            throw new java.lang.IllegalArgumentException("Usage - java -cp target/cafs-1.0-jar-with-dependencies.jar <input data>  <index output>");
+
+        }
         JobClient client = new JobClient();
         JobConf conf = new JobConf(HadoopIndexer.class);
-        long startTime = System.nanoTime();
+        long startTime = System.currentTimeMillis();
         conf.setJobName("HadoopIndexer");
 
         conf.setOutputKeyClass(Text.class);
@@ -92,8 +116,8 @@ public class HadoopIndexer {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        long endTime = System.nanoTime();
-        System.out.println("Took "+(endTime - startTime)/1000000 + " seconds");
+        long endTime = System.currentTimeMillis();
+        System.out.println("Took "+(endTime - startTime)/1000 + " seconds");
         //Last execution took 399.54694815 secs or 399546948150 ns
     }
 }

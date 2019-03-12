@@ -34,7 +34,7 @@ public class SearchLuceneStandalone implements Serializable {
             SearchLuceneIndex s = new SearchLuceneIndex();
             query = new QueryParser("text", new StandardAnalyzer()).parse(args[0]);
 
-            int hitsPerPage = 10;
+            int hitsPerPage = 56;
             IndexReader reader = DirectoryReader.open(index);
             IndexSearcher searcher = new IndexSearcher(reader);
             TopScoreDocCollector collector = TopScoreDocCollector.create(hitsPerPage);
@@ -45,7 +45,7 @@ public class SearchLuceneStandalone implements Serializable {
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
             for (ScoreDoc hit : hits) {
                 Document doc = reader.document(hit.doc);
-                System.out.println(doc.get("id") + "  (" + hit.score + ")" + hit.toString());
+                System.out.println(doc.get("id") + "  (" + hit.score + ")" + doc.get("text"));
             }
 
         } catch (ParseException e) {
