@@ -1,5 +1,4 @@
 package partb;
-
 import java.util.List;
 
 public interface Tokenizer {
