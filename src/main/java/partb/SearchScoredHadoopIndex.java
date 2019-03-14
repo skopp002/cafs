@@ -89,7 +89,6 @@ public class SearchScoredHadoopIndex {
             long startTime = System.nanoTime();
             SearchScoredHadoopIndex si = new SearchScoredHadoopIndex();
             Map<String, Map<String, Double>> index = si.buildIndex(args[0]);
-            System.out.println("Built INDEX "+ index.toString()  );
             List searchResults = si.search(index, args[1]);
             System.out.println(searchResults.toString());
             long endTime = System.nanoTime();
