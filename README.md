@@ -7,5 +7,5 @@ hadoop jar /Users/sunitakoppar/ucr/projects/cafs/target/cafs-1.0-jar-with-depend
 hadoop fs -get /hadoopScoredIndex 
 Place the file in root of this repository
 
-java -cp cafs-1.0-jar-with-dependencies.jar partb.SearchScoredHadoopIndex hadoopScoredIndex/part-00000 Adbowl 
+java -cp cafs-1.0-jar-with-dependencies.jar partb.SearchScoredHadoopIndex hadoopScoredIndex/part-00000 India 
 
