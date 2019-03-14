@@ -6,19 +6,44 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.*;
+import org.apache.lucene.store.FSDirectory;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class SearchScoredHadoopIndex {
-    private static Map<String, Map<String, Double>> INDEX; // {term, {docId, score}}
-    private Map<Object, DocumentMeta> documents;
-//    private Tokenizer tokenizer;
-//    private Serializer<Map<String, Map<Object, Double>>> serializer;
-//
 
-    public static Map<String, Map<String, Double>> getIndex(){
+    public  Map<String, Map<String, Double>> buildIndex(String indexPath){
+        String lines;
+        Map<String, Map<String, Double>> INDEX=new HashMap<>();
+        try {
+            BufferedReader br  = new BufferedReader(new FileReader(new File(indexPath)));
+            while ((lines = br.readLine()) != null) {
+                String[] tweetlist = lines.split("\\|\\|NextTag\\|\\|");
+                Map<String, Double> tagDocMap = new HashMap();
+
+                for (int i = 0; i < tweetlist.length; i++) {
+                    try {
+                        if (tweetlist[i].startsWith("--KeyStarts---->")) {
+                            String hashtag = (tweetlist[i].split("--DocList------->")[0]).replaceAll("--KeyStarts---->", "").replaceAll("\\t", "").replaceAll("\\#","");
+                            String[] tweetsPerHashtag = tweetlist[i].split("--DocList------->")[1].split("\\|\\|NextTweet\\|\\|");
+                            for (String tweet : tweetsPerHashtag) {
+                                double score = Double.parseDouble(tweet.split("___")[0]);
+                                String doc = tweet.split("___")[1];
+                                tagDocMap.put(doc, score);
+                            }
+                            INDEX.put(hashtag, tagDocMap);
+                        }
+                    }  catch(java.lang.ArrayIndexOutOfBoundsException a){
+                    }
+                }
+            }
+        } catch (IOException e){
+        }
         return INDEX;
     }
 
@@ -27,9 +52,9 @@ public class SearchScoredHadoopIndex {
      * @param query to search documents
      * @return the list of SearchResult in default topK
      */
-    public List<SearchResult> search(String query) {
-        int defaultTopK = 100;
-        return this.search(query, defaultTopK);
+    public List<SearchResult> search(Map<String, Map<String, Double>> index,String query) {
+        int defaultTopK = 10;
+        return this.search(index, query, defaultTopK);
     }
 
     /**
@@ -38,7 +63,7 @@ public class SearchScoredHadoopIndex {
      * @param topK the number of maximum documents
      * @return the list of SearchResults in topK
      */
-    public List<SearchResult> search(String query, int topK) {
+    public List<SearchResult> search(Map<String, Map<String, Double>> INDEX, String query, int topK) {
         String[] queries = query.split(" ");
         Map<Object, Double> results = new HashMap<>(); // {docId, score}
         for (String q : queries) {
@@ -59,63 +84,13 @@ public class SearchScoredHadoopIndex {
                 .collect(Collectors.toList());
     }
 
-    public static class SearchMapper extends MapReduceBase
-            implements Mapper<LongWritable, Text, Text, Text> {
-
-        private final static Text word = new Text();
-        private final static Text location = new Text();
-
-        public void map(LongWritable key, Text val,
-                        OutputCollector<Text, Text> output, Reporter reporter) throws IOException {
-
-               String line = val.toString();
-               String[] tweetlist =  line.split("||NextTag||");
-               Map<String, Double> tagDocMap = new HashMap();
-               try{
-                for(int i=0;i<tweetlist.length; i++) {
-                    String hashtag = tweetlist[i].split("--------->")[0];
-                    String[] tweetsPerHashtag = tweetlist[i].split("--------->")[1].split("||NextTweet||");
-                    for(String tweet: tweetsPerHashtag){
-                        double score = Double.parseDouble(tweet.split("___")[0]);
-                        String doc = tweet.split("___")[1];
-                        tagDocMap.put(doc,score);
-                    }
-                  INDEX.put(hashtag,tagDocMap);
-                }
-                }catch(org.json.JSONException e){
-                System.out.println("Exception while searching "+ e.getMessage());
-               }
-
-        }
-
-
-
-    }
-        public static class SearchReducer extends MapReduceBase
-                implements Reducer<Text, Text, Text, Text> {
-
-            public void reduce(Text key, Iterator<Text> values,
-                               OutputCollector<Text, Text> output, Reporter reporter)
-                    throws IOException {
-            }
-
-        }
-
     public static void main(String[] args) {
         try {
-            JobClient client = new JobClient();
-            JobConf conf = new JobConf(SearchScoredHadoopIndex.class);
             long startTime = System.nanoTime();
-            conf.setJobName("ScoredHadoopSearch");
-            conf.setOutputKeyClass(Text.class);
-            conf.setOutputValueClass(Text.class);
-            FileInputFormat.addInputPath(conf, new Path(args[0]));
-            FileOutputFormat.setOutputPath(conf, new Path("queryresults.csv"));
-            conf.setMapperClass(SearchScoredHadoopIndex.SearchMapper.class);
-            client.setConf(conf);
-            JobClient.runJob(conf);
             SearchScoredHadoopIndex si = new SearchScoredHadoopIndex();
-            List searchResults = si.search(args[1]);
+            Map<String, Map<String, Double>> index = si.buildIndex(args[0]);
+            System.out.println("Built INDEX "+ index.toString()  );
+            List searchResults = si.search(index, args[1]);
             System.out.println(searchResults.toString());
             long endTime = System.nanoTime();
             System.out.println("Took "+(endTime - startTime)/1000000 + " seconds");

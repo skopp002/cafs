@@ -1,17 +1,11 @@
 package partb;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
-import org.apache.hadoop.conf.Configuration;
+import java.util.*;
 import org.apache.hadoop.fs.ContentSummary;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.*;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -21,7 +15,6 @@ import org.json.*;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 
-import javax.security.auth.callback.TextInputCallback;
 
 public class HadoopIndexer {
     private static long DOCUMENT_TOTAL_COUNT=0;
@@ -122,11 +115,24 @@ public class HadoopIndexer {
                     double tf = Double.parseDouble(tfAndDoc[0]);
                     double idf = idf(doclist,key.toString());
                     double tfidf = score(tf,idf,doc.length());
-                    scoredDocs.append(tfidf+ "___"+tfAndDoc[1]);
+                    scoredDocs.append(tfidf+ "___"+tfAndDoc[1].replaceAll("\t", " ").replaceAll("\n", " ").replaceAll("\r", " "));
                     scoredDocs.append("||NextTweet||");
                 }
-                System.out.println(key + "--------->" + scoredDocs.toString());
-                output.collect(key, new Text("--------->" + scoredDocs.toString()+ "||NextTag||"));
+//                System.out.println(key + "--------->" + scoredDocs.toString());
+//                output.collect(new Text("--KeyStarts---->"+key.toString()), new Text("--DocList------->" + scoredDocs.toString()+ "||NextTag||"));
+                  //Map<String, Map<String,String>> kv = new HashMap();
+//                  Map<String,String> scoredDocs = new HashMap();
+//                for (String doc : doclist) {
+//                    String[] tfAndDoc = doc.split("__");
+//                    double tf = Double.parseDouble(tfAndDoc[0]);
+//                    double idf = idf(doclist, key.toString());
+//                    Double tfidf = score(tf, idf, doc.length());
+//                    scoredDocs.put("score",tfidf.toString());
+//                    scoredDocs.put("doc",tfAndDoc[1]);
+//                }
+//                  kv.put(key.toString(),scoredDocs);
+//                String scoredDocsJson = new ObjectMapper().writeValueAsString(scoredDocs);
+                output.collect(new Text("--KeyStarts---->"+key.toString()), new Text("--DocList------->" + scoredDocs.toString()+ "||NextTag||"));
 
             }catch(JSONException e){
                 e.printStackTrace();
